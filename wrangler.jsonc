@@ -1,0 +1,10 @@
+{
+  // 說明頁「みんなの意見マップ」：純靜態頁面，public/ 底下的檔案直接公開。
+  // name 必須維持 polis-info，才會更新到 https://polis-info.kotoisa-npo.workers.dev
+  "name": "polis-info",
+  "compatibility_date": "2026-09-01",
+  "workers_dev": true,
+  "assets": {
+    "directory": "./public"
+  }
+}

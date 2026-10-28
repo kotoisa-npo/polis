@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>みんなの意見マップ</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
+<style>
+/* Layout: one narrow reading column; hero is a small "opinion map" of clustered dots, then steps, two theme cards, goal meter, forward-message box */
+:root{
+  --bg:#F1F4F6;
+  --surface:#FFFFFF;
+  --ink:#1D2A36;
+  --muted:#5A6874;
+  --line:#D6DEE4;
+  --accent:#2B5D8A;
+  --accent-ink:#FFFFFF;
+  --agree:#2F8F6B;
+  --disagree:#C8553D;
+  --pass:#9AA6B0;
+  --soft:#E3ECF3;
+  --display:"Zen Maru Gothic","Hiragino Maru Gothic ProN","Hiragino Sans",sans-serif;
+  --body:"Zen Kaku Gothic New","Hiragino Sans","Noto Sans JP","Yu Gothic",sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#121A21;--surface:#1A242D;--ink:#E6ECF1;--muted:#A3B0BB;--line:#2C3943;
+  --accent:#7FB2DE;--accent-ink:#0F1820;--agree:#5CC39A;--disagree:#E58771;--pass:#6C7A86;--soft:#1F2D39;
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#121A21;--surface:#1A242D;--ink:#E6ECF1;--muted:#A3B0BB;--line:#2C3943;
+  --accent:#7FB2DE;--accent-ink:#0F1820;--agree:#5CC39A;--disagree:#E58771;--pass:#6C7A86;--soft:#1F2D39;
+  color-scheme:dark}
+
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.85;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:640px;margin:0 auto;padding-block:24px 56px;display:flex;flex-direction:column;gap:48px}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0;line-height:1.4}
+p{margin:0}
+.eyebrow{font-size:13px;letter-spacing:.12em;color:var(--accent);font-weight:700}
+
+/* hero */
+.hero{display:flex;flex-direction:column;gap:16px}
+.hero h1{font-size:clamp(24px,6vw,34px);font-weight:900}
+.hero .lead{color:var(--muted);font-size:17px}
+.map{width:100%;max-width:100%;height:auto;display:block;background:var(--surface);border:1px solid var(--line);border-radius:16px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.dot{width:10px;height:10px;border-radius:50%;display:inline-block}
+
+section{display:flex;flex-direction:column;gap:16px}
+h2{font-size:22px;font-weight:700}
+
+/* how */
+.vote{display:flex;flex-wrap:wrap;gap:8px}
+.chip{white-space:nowrap;font-weight:700;font-size:14px;padding:4px 14px;border-radius:999px;border:1.5px solid currentColor}
+.chip.a{color:var(--agree)}.chip.d{color:var(--disagree)}.chip.p{color:var(--pass)}
+ol.steps{list-style:none;margin:0;padding:0;display:grid;gap:12px;counter-reset:s}
+ol.steps li{counter-increment:s;display:grid;grid-template-columns:32px 1fr;gap:12px;align-items:start}
+ol.steps li::before{content:counter(s);font-family:var(--display);font-weight:900;width:32px;height:32px;border-radius:50%;
+  background:var(--soft);color:var(--accent);display:grid;place-items:center;font-size:15px;line-height:1}
+ol.steps li p{min-width:0}
+
+/* themes */
+.themes{display:grid;gap:16px}
+.theme{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:22px;display:flex;flex-direction:column;gap:14px}
+.theme .tag{font-size:12px;letter-spacing:.1em;color:var(--muted);font-weight:700}
+.theme h3{font-size:20px;font-weight:700}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;background:var(--accent);color:var(--accent-ink);
+  text-decoration:none;font-weight:700;padding:12px 20px;border-radius:12px;border:0;font-family:var(--body);font-size:16px;cursor:pointer;align-self:flex-start}
+.btn:hover{filter:brightness(1.08)}
+.btn:focus-visible,.ghost:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+.facts{display:flex;flex-wrap:wrap;gap:8px}
+.facts span{background:var(--soft);color:var(--ink);font-size:14px;padding:4px 12px;border-radius:8px}
+
+/* themes side by side, buttons aligned at the bottom */
+.themes{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.theme{justify-content:space-between}
+.theme .btn{align-self:stretch;margin-top:auto}
+@media (max-width:480px){
+  .theme{padding:16px 14px;gap:10px}
+  .theme h3{font-size:16px}
+  .theme .btn{font-size:14px;padding:10px 8px}
+}
+
+/* seven-vote callout */
+.callout{background:var(--soft);border-radius:14px;padding:16px 18px;display:flex;gap:14px;align-items:center}
+.callout .num{font-family:var(--display);font-weight:900;font-size:40px;line-height:1;color:var(--accent);flex:none;font-variant-numeric:tabular-nums}
+.callout .num small{font-size:15px;margin-left:2px}
+.callout p{min-width:0;font-size:15px;line-height:1.7}
+.callout b{color:var(--ink)}
+
+/* writing tips */
+.rules{margin:0;padding-left:1.2em;display:grid;gap:4px}
+.ex-grid{display:grid;gap:12px}
+.ex{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:10px}
+.ex h3{font-size:16px;font-weight:700}
+.ex ul{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.ex li{display:grid;grid-template-columns:24px 1fr;gap:8px;align-items:start;font-size:15px;line-height:1.7}
+.ex li > span{min-width:0}
+.ex li::before{font-family:var(--display);font-weight:900;font-size:17px;line-height:1.5;text-align:center}
+.ex li.ok::before{content:"○";color:var(--agree)}
+.ex li.ng::before{content:"×";color:var(--disagree)}
+.ex .why{display:block;font-size:13px;color:var(--muted)}
+.ex .label{font-size:13px;font-weight:700;color:var(--muted);letter-spacing:.05em}
+
+/* workshop */
+.ws{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:22px;display:flex;flex-direction:column;gap:18px}
+.ws .pre{font-size:13px;color:var(--muted);font-weight:700;letter-spacing:.05em}
+.ws h3{font-size:22px;font-weight:900}
+.dates{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.date{background:var(--soft);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:2px;font-variant-numeric:tabular-nums}
+.date b{font-family:var(--display);font-size:20px;line-height:1.3}
+.date span{font-size:14px;color:var(--muted)}
+.note{font-size:13px;color:var(--muted)}
+dl.info{margin:0;display:grid;grid-template-columns:auto 1fr;gap:6px 16px;font-size:15px}
+dl.info dt{color:var(--muted);font-weight:700;white-space:nowrap}
+dl.info dd{margin:0;min-width:0}
+.btn.wide{align-self:stretch;font-size:17px;padding:14px 20px}
+.mail{user-select:all;word-break:break-all}
+.jump{color:var(--accent);font-weight:700;text-decoration:none;border-bottom:1.5px solid currentColor;align-self:flex-start;font-size:15px}
+
+/* goal */
+.goal{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:22px;display:flex;flex-direction:column;gap:14px}
+.goal .big{font-family:var(--display);font-weight:900;font-size:44px;line-height:1;color:var(--accent)}
+.goal .big small{font-size:18px;color:var(--ink);margin-left:4px}
+.grow{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.grow figure{margin:0;display:flex;flex-direction:column;gap:6px;align-items:center;font-size:13px;color:var(--muted);text-align:center}
+.grow svg{width:100%;max-width:120px;height:auto}
+
+/* share */
+.share textarea{width:100%;box-sizing:border-box;min-height:180px;font-family:var(--body);font-size:14px;line-height:1.7;
+  background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:12px;padding:14px;resize:vertical}
+.ghost{background:transparent;color:var(--accent);border:1.5px solid var(--accent);padding:10px 18px;border-radius:12px;font-weight:700;font-family:var(--body);font-size:15px;cursor:pointer;align-self:flex-start}
+.status{font-size:14px;color:var(--agree);min-height:1.5em}
+
+footer{font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:20px}
+@media (prefers-reduced-motion: no-preference){
+  .map .c{animation:pop .6s ease-out both}
+  @keyframes pop{from{transform:scale(.4)}to{transform:scale(1)}}
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <header class="hero">
+    <p class="eyebrow">NPO法人 Kotoisa ｜ 意見あつめ</p>
+    <h1>3分・匿名で、あなたの意見を聞かせてください</h1>
+    <div class="themes">
+      <article class="theme">
+        <p class="tag">テーマ 1</p>
+        <h3>小学校でのAI、子どもたちはどう向き合っていけばいい？</h3>
+        <a class="btn" href="https://polis-serverless.kotoisa-npo.workers.dev/c/xpro7sby2x?lang=ja" target="_blank" rel="noopener">答える →</a>
+      </article>
+      <article class="theme">
+        <p class="tag">テーマ 2</p>
+        <h3>これからの自治会、何を残して何を変える？</h3>
+        <a class="btn" href="https://polis-serverless.kotoisa-npo.workers.dev/c/x1hlqo6mvc?lang=ja" target="_blank" rel="noopener">答える →</a>
+      </article>
+    </div>
+    <div class="facts"><span>1テーマ 約3分</span><span>匿名・登録なし</span><span>どちらか1つでもOK</span></div>
+    <a class="jump" href="#workshop">11月のワークショップ（参加者募集中）はこちら ↓</a>
+  </header>
+
+  <section aria-labelledby="how">
+    <h2 id="how">参加のしかた</h2>
+    <ol class="steps">
+      <li><p>上のテーマを選んで開きます。</p></li>
+      <li><div><p>表示される意見を読んで、ボタンで答えます。<b>7つ以上</b>答えると、あなたの声が意見マップに載ります。</p>
+        <div class="vote" style="margin-top:8px"><span class="chip a">賛成</span><span class="chip d">反対</span><span class="chip p">保留</span></div></div></li>
+      <li><p>答え終わったら、みなさんの意見の分布を「意見マップ」で見られます。</p></li>
+    </ol>
+  </section>
+
+
+  <section aria-labelledby="what">
+    <h2 id="what">Polis（ポリス）とは</h2>
+    <p>Polisは、オープンソースの「議論・意見集約ツール」です。一般的なSNSと違って、炎上や対立が起きにくい仕組みになっています。</p>
+    <p>参加者が意見に答えると、AIが答え方の似ている人どうしをグループに分け、グループをこえて多くの人が納得できる「共通の意見（合意点）」を自動で見つけてくれます。</p>
+    <svg class="map" viewBox="0 0 600 260" role="img" aria-label="意見のグループと、グループをこえた共通点を示すイメージ図">
+      <ellipse cx="300" cy="130" rx="70" ry="52" fill="var(--soft)" stroke="var(--accent)" stroke-dasharray="5 5" stroke-width="1.5"/>
+      <text x="300" y="70" text-anchor="middle" font-size="13" fill="var(--accent)" font-family="var(--body)" font-weight="700">共通の意見</text>
+      <g class="dots"></g>
+      <text x="110" y="238" text-anchor="middle" font-size="12" fill="var(--muted)" font-family="var(--body)">グループA</text>
+      <text x="490" y="238" text-anchor="middle" font-size="12" fill="var(--muted)" font-family="var(--body)">グループB</text>
+    </svg>
+    <div class="legend">
+      <span><i class="dot" style="background:var(--agree)"></i>賛成が多い人</span>
+      <span><i class="dot" style="background:var(--disagree)"></i>反対が多い人</span>
+      <span><i class="dot" style="background:var(--accent)"></i>どちらのグループも賛成した意見</span>
+    </div>
+  </section>
+
+  <section id="workshop" aria-labelledby="ws-title">
+    <h2>ワークショップのお知らせ</h2>
+    <div class="ws">
+      <div>
+        <p class="pre">「AI市民プラットフォーム」プレイベント</p>
+        <h3 id="ws-title">AIを使って「学校とAI」を考える</h3>
+      </div>
+      <p>学校教育にAIを導入することについて、長所・短所を事前にアンケートで集めました。その結果をもとに、異なる意見から共通点を探す手法（台湾の市民参加で使われているもの）を使って、一緒に考えます。</p>
+      <div>
+        <div class="dates">
+          <div class="date"><b>① 11/7（土）</b><span>13:30〜15:30</span></div>
+          <div class="date"><b>② 11/18（水）</b><span>10:00〜12:00</span></div>
+        </div>
+        <p class="note" style="margin-top:8px">どちらも同じ内容です。要事前予約。</p>
+      </div>
+      <dl class="info">
+        <dt>会場</dt><dd>スプラウトカフェ<br>三重県四日市市諏訪栄町2-9 三重興農社ビル1階<br><span class="note">近鉄四日市駅 東出口から徒歩約3〜4分／駐車場なし</span></dd>
+        <dt>参加費</dt><dd>ワンドリンク 200円のみ</dd>
+        <dt>定員</dt><dd>各回20名</dd>
+        <dt>主催</dt><dd>NPO法人 Kotoisa</dd>
+        <dt>問合せ</dt><dd class="mail">kotoisa.npo@gmail.com</dd>
+      </dl>
+      <a class="btn wide" href="https://forms.gle/X3HQfD1XLEgmAfUWA" target="_blank" rel="noopener">ワークショップに申し込む →</a>
+      <p class="note">上のテーマ①に答えてから来ていただくと、当日の話し合いがより深まります。</p>
+    </div>
+  </section>
+
+  <section aria-labelledby="goal">
+    <h2 id="goal">目標は100人</h2>
+    <div class="goal">
+      <p class="big">100<small>人の声</small></p>
+      <p>Polisは、参加する人が多いほど、意見のグループや共通点がはっきり見えてきます。そのため今、できるだけ多くの方に声をおかけしています。</p>
+      <div class="grow" aria-hidden="true">
+        <figure><svg viewBox="0 0 120 80" class="g" data-n="6"></svg><figcaption>少ないと…<br>まだぼんやり</figcaption></figure>
+        <figure><svg viewBox="0 0 120 80" class="g" data-n="22"></svg><figcaption>増えてくると<br>まとまりが見える</figcaption></figure>
+        <figure><svg viewBox="0 0 120 80" class="g" data-n="60"></svg><figcaption>100人で<br>共通点がくっきり</figcaption></figure>
+      </div>
+    </div>
+  </section>
+
+  <section class="share" aria-labelledby="share">
+    <h2 id="share">ご家族・お友だちにも</h2>
+    <p>差し支えなければ、このメッセージを転送していただけると大変ありがたいです。</p>
+    <label for="msg" class="tag" style="font-size:13px;color:var(--muted)">転送用メッセージ</label>
+    <textarea id="msg" readonly>3分で参加できる「意見あつめ」に協力しています。匿名・登録不要です。7つ以上答えると意見マップに反映されます。どちらか一つだけでも大丈夫です🙏
+
+① 小学校でのAI、子どもたちはどう向き合っていけばいい？
+https://polis-serverless.kotoisa-npo.workers.dev/c/xpro7sby2x?lang=ja
+
+② これからの自治会、何を残して何を変える？
+https://polis-serverless.kotoisa-npo.workers.dev/c/x1hlqo6mvc?lang=ja
+
+▼11月のワークショップ「AIを使って『学校とAI』を考える」（11/7土・11/18水、四日市・スプラウトカフェ）
+申込：https://forms.gle/X3HQfD1XLEgmAfUWA</textarea>
+    <button class="ghost" id="copy" type="button">メッセージをコピー</button>
+    <p class="status" id="status" role="status"></p>
+  </section>
+
+  <footer>NPO法人 Kotoisa ｜ 三重県四日市市を拠点に、対話と市民参加の場づくりをしています。</footer>
+</div>
+
+<script>
+(function(){
+  // seeded random so the map looks the same every load
+  let s=7;function r(){s=(s*9301+49297)%233280;return s/233280}
+  const NS="http://www.w3.org/2000/svg";
+  function dot(g,x,y,rad,fill,delay){const c=document.createElementNS(NS,"circle");c.setAttribute("cx",x);c.setAttribute("cy",y);c.setAttribute("r",rad);c.setAttribute("fill",fill);c.setAttribute("class","c");c.style.transformOrigin=x+"px "+y+"px";c.style.animationDelay=delay+"s";g.appendChild(c)}
+  const g=document.querySelector(".map .dots");
+  for(let i=0;i<22;i++){dot(g,110+(r()-.5)*150,130+(r()-.5)*150,6,"var(--agree)",i*.02)}
+  for(let i=0;i<22;i++){dot(g,490+(r()-.5)*150,130+(r()-.5)*150,6,"var(--disagree)",i*.02)}
+  for(let i=0;i<9;i++){dot(g,300+(r()-.5)*90,135+(r()-.5)*60,5,"var(--accent)",.4+i*.03)}
+
+  document.querySelectorAll(".grow .g").forEach(svg=>{
+    const n=+svg.dataset.n; s=11;
+    for(let i=0;i<n;i++){
+      const left=i%2===0, spread= n<10?110:(n<30?55:34);
+      const cx=left?32:88, x=n<10?10+r()*100:cx+(r()-.5)*spread, y=n<10?10+r()*60:40+(r()-.5)*spread*.8;
+      const c=document.createElementNS(NS,"circle");c.setAttribute("cx",x);c.setAttribute("cy",y);c.setAttribute("r",3);
+      c.setAttribute("fill",left?"var(--agree)":"var(--disagree)");svg.appendChild(c);
+    }
+    if(n>=60){const e=document.createElementNS(NS,"ellipse");e.setAttribute("cx",60);e.setAttribute("cy",40);e.setAttribute("rx",14);e.setAttribute("ry",12);
+      e.setAttribute("fill","var(--soft)");e.setAttribute("stroke","var(--accent)");e.setAttribute("stroke-width","1.5");svg.appendChild(e)}
+  });
+
+  const btn=document.getElementById("copy"),ta=document.getElementById("msg"),st=document.getElementById("status");
+  btn.addEventListener("click",()=>{
+    const fallback=()=>{ta.focus();ta.select();st.textContent="文章を選択しました。長押し（またはCtrl+C）でコピーしてください。"};
+    try{navigator.clipboard.writeText(ta.value).then(()=>{st.textContent="コピーしました。LINEやメールに貼り付けてください。"},fallback)}catch(e){fallback()}
+  });
+})();
+</script>
+</body>
+</html>
